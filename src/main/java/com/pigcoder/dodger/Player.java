@@ -3,63 +3,48 @@ package com.pigcoder.dodger;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 
-public class Player {
+public class Player extends Rectangle2D.Double {
 
     public static final Dimension defaultSize = new Dimension(10,10);
 
-    //Position
-    private Point position;
-
     private Dimension size = defaultSize;
 
-    //The amount of pixels the player moves
-    private int speed = 1;
+    private double xVel;
+    private double yVel;
 
-    private Rectangle2D.Double shape;
-
-    public Point getPosition() { return position; }
-    public void setPosition(Point p) { position = p; }
+    public double getxVel() { return xVel; }
+    public void setxVel(double xVel) { this.xVel = xVel; }
+    public void increasexVel(double a) { xVel+=a; }
+    public void decreasexVel(double a) { xVel-=a; }
+    public double getyVel() { return yVel; }
+    public void setyVel(double yVel) { this.yVel = yVel; }
+    public void increaseyVel(double a) { yVel+=a; }
+    public void decreaseyVel(double a) { yVel-=a; }
 
     public Dimension getSize() { return size; }
     public void setSize(Dimension d) { size = d; }
 
-    public int getSpeed() { return speed; }
-    public void setSpeed(int s) { speed = s; }
-
-    public Rectangle2D.Double getShape() { return shape; }
-
-    public void move(char direction, int amount) {
+    public void move(int direction, double amount) {
         switch(direction) {
-            case('w'): // up
-                if(position.getY() - amount > 1) {
-                    position.translate(0,-amount);
-                    shape.y=position.y;
-                }
+            case 1: //up
+                y-=amount;
                 break;
-            case('a'): // left
-                if(position.getX() - amount > 1) {
-                    position.translate(-amount,0);
-                    shape.x=position.x;
-                }
+            case 2: //down
+                y+=amount;
                 break;
-            case('s'): // down
-                if(position.getY() + size.getHeight() + amount < Dodger.size.getHeight()) {
-                    position.translate(0, amount);
-                    shape.y=position.y;
-                }
+            case 3: //left
+                x-=amount;
                 break;
-            case('d'): // right
-                if(position.getX() + size.getWidth() + amount < Dodger.size.getWidth()) {
-                    position.translate(amount,0);
-                    shape.x=position.x;
-                }
+            case 4: //right
+                x+=amount;
                 break;
         }
     }
 
-    public Player(Point p) {
-        position = p;
-        shape = new Rectangle2D.Double(p.getX(),p.getY(),size.getWidth(),size.getHeight());
+    public Player(int x, int y) {
+        this.x = x;
+        this.y = y;
+        this.width = size.getWidth();
+        this.height = size.getHeight();
     }
-
 }
