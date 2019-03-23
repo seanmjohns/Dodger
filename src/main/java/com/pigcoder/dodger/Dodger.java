@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
 
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -17,6 +18,9 @@ public class Dodger {
 
     //The player instance
     public static Player player;
+
+    //Stores the score (Which is just seconds passed)
+    public static int score;
 
     //All enemies
     public static ArrayList<Enemy> enemies = new ArrayList<Enemy>();
@@ -71,6 +75,7 @@ public class Dodger {
                 for (Enemy enemy : enemies) {
                     enemy.move();
                     if (player.intersects(enemy)) {
+                        died();
                         gameOver = true;
                     }
                 }
@@ -92,7 +97,7 @@ public class Dodger {
                     player.increaseyVel(0.15);
                 }
                 else {//Slow the player down if no keys are being pressed
-                    player.decreaseyVel(player.getyVel() / 50); //Halves speed
+                    player.decreaseyVel(player.getyVel() / 15); //Cuts speed to 15%
                 }
 
                 //Horizontal movement
@@ -103,7 +108,7 @@ public class Dodger {
                     player.increasexVel(0.15);
                 }
                 else { //Slow the player down if no keys are being pressed
-                    player.decreasexVel(player.getxVel() / 50); //Halves speed
+                    player.decreasexVel(player.getxVel() / 15); //Cuts speed to 15%
                 }
 
                 //If the player has run into a wall, stop them
@@ -138,6 +143,14 @@ public class Dodger {
         }
     });
 
+    //Increase the score every second
+    public static Timer scoreKeeper = new Timer(1000, new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            score++;
+        }
+    });
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -159,12 +172,18 @@ public class Dodger {
         InputMap im = screen.getRootPane().getInputMap(JComponent.WHEN_FOCUSED);
         ActionMap am = screen.getRootPane().getActionMap();
 
+        //Movement
         im.put(KeyStroke.getKeyStroke("W"), "up");
         im.put(KeyStroke.getKeyStroke("A"), "left");
         im.put(KeyStroke.getKeyStroke("S"), "down");
         im.put(KeyStroke.getKeyStroke("D"), "right");
+        im.put(KeyStroke.getKeyStroke("UP"), "up");
+        im.put(KeyStroke.getKeyStroke("LEFT"), "left");
+        im.put(KeyStroke.getKeyStroke("DOWN"), "down");
+        im.put(KeyStroke.getKeyStroke("RIGHT"), "right");
+
         im.put(KeyStroke.getKeyStroke("R"), "restart");
-        im.put(KeyStroke.getKeyStroke("F"), "pause");
+        im.put(KeyStroke.getKeyStroke("E"), "pause");
 
         am.put("up", new KeyBinder("up"));
         am.put("left", new KeyBinder("left"));
@@ -178,6 +197,10 @@ public class Dodger {
         im.put(KeyStroke.getKeyStroke("released A"), "leftreleased");
         im.put(KeyStroke.getKeyStroke("released S"), "downreleased");
         im.put(KeyStroke.getKeyStroke("released D"), "rightreleased");
+        im.put(KeyStroke.getKeyStroke("released UP"), "upreleased");
+        im.put(KeyStroke.getKeyStroke("released LEFT"), "leftreleased");
+        im.put(KeyStroke.getKeyStroke("released DOWN"), "downreleased");
+        im.put(KeyStroke.getKeyStroke("released RIGHT"), "rightreleased");
 
         am.put("upreleased", new KeyBinder("releasedup"));
         am.put("leftreleased", new KeyBinder("releasedleft"));
@@ -194,6 +217,18 @@ public class Dodger {
         inputManager.start();
         enemyCreator.start();
         enemyMover.start();
+        scoreKeeper.start();
+
+        //When the window is not focused the game needs to be paused
+        screen.addWindowFocusListener(new WindowFocusListener() {
+            @Override
+            public void windowGainedFocus(WindowEvent e) { }
+
+            @Override
+            public void windowLostFocus(WindowEvent e) {
+                pause();
+            }
+        });
 
         screen.setVisible(true);
 
@@ -204,23 +239,33 @@ public class Dodger {
     public static void startGame() {
         //Set the player's position
         gameOver = false;
+        score = 0;
         unpause();
         enemies.clear();
         player = new Player((int)size.getWidth()/2, (int)size.getHeight()/2);
     }
 
     public static void pause() {
-        Dodger.enemyCreator.stop();
-        Dodger.enemyMover.stop();
-        Dodger.inputManager.stop();
-        Dodger.gamePaused = true;
+        enemyCreator.stop();
+        enemyMover.stop();
+        inputManager.stop();
+        scoreKeeper.stop();
+        gamePaused = true;
     }
 
     public static void unpause() {
-        Dodger.enemyCreator.start();
-        Dodger.enemyMover.start();
-        Dodger.inputManager.start();
-        Dodger.gamePaused = false;
+        enemyCreator.start();
+        enemyMover.start();
+        inputManager.start();
+        scoreKeeper.start();
+        gamePaused = false;
+    }
+
+    public static void died() {
+        enemyCreator.stop();
+        enemyMover.stop();
+        inputManager.stop();
+        scoreKeeper.stop();
     }
 
 }
@@ -232,6 +277,7 @@ class GameArea extends JPanel {
         super.paintComponent(g);
 
         Graphics2D graphicsSettings = (Graphics2D)g;
+        FontMetrics fm = graphicsSettings.getFontMetrics();
 
         graphicsSettings.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -252,6 +298,28 @@ class GameArea extends JPanel {
             graphicsSettings.setPaint(Color.BLACK);
             graphicsSettings.drawRect((int)e.getX(), (int)e.getY(), (int)e.getWidth(), (int)e.getHeight());
         }
+
+        //Display the score
+        graphicsSettings.setPaint(Color.BLACK);
+        graphicsSettings.drawString(Integer.toString(Dodger.score), 10, 20);
+
+        //If the game is paused, say so
+        if(Dodger.gamePaused) {
+            graphicsSettings.setPaint(Color.BLACK);
+            graphicsSettings.drawString("PAUSED", (int)Dodger.size.getWidth() - fm.stringWidth("PAUSED") - 10, 20);
+        }
+
+        //Display the controls. Note the 16; that is the height of the font
+        //Background
+        graphicsSettings.setPaint(new Color(0,0,0, 64)); //Translucent
+        graphicsSettings.fillRoundRect(5, (int)Dodger.size.getHeight() - fm.getHeight() - 5*3 - 16*3, fm.stringWidth("Move - WASD / Arrows") + 10, fm.getHeight() + 5*2 + 16*3, 10, 10);
+        graphicsSettings.setPaint(new Color(0,0,0, 127)); //Translucent
+        graphicsSettings.drawRoundRect(5, (int)Dodger.size.getHeight() - fm.getHeight() - 5*3 - 16*3, fm.stringWidth("Move - WASD / Arrows") + 10, fm.getHeight() + 5*2 + 16*3, 10, 10);
+        //The text
+        graphicsSettings.setPaint(Color.BLACK);
+        graphicsSettings.drawString("Restart - R", 10, (int)Dodger.size.getHeight() - fm.getHeight());
+        graphicsSettings.drawString("Pause - E", 10, (int)Dodger.size.getHeight() - fm.getHeight() - 5 - 16);
+        graphicsSettings.drawString("Move - WASD / Arrows", 10, (int)Dodger.size.getHeight() - fm.getHeight() - 5*2 - 16*2);
     }
 
 }
@@ -269,7 +337,7 @@ class KeyBinder extends AbstractAction {
         if(cmd.equals("restart")) {
             Dodger.startGame();
         }
-        else if(cmd.equals("pause")) {
+        else if(cmd.equals("pause") && !Dodger.gameOver) {
             if(!Dodger.gamePaused) {
                 Dodger.pause();
             } else {
