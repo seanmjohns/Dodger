@@ -9,7 +9,7 @@ public class Player extends Rectangle2D.Double {
 
     private Dimension size = defaultSize;
 
-    private boolean hasBrake = false;
+    private int storedPowerupType = -1; //This is -1 if no powerup
 
     private double xVel;
     private double yVel;
@@ -23,8 +23,8 @@ public class Player extends Rectangle2D.Double {
     public void increaseyVel(double a) { yVel+=a; }
     public void decreaseyVel(double a) { yVel-=a; }
 
-    public boolean getHasBrake() { return hasBrake;}
-    public void setHasBrake(boolean b) { hasBrake = b;}
+    public int getStoredPowerup() { return storedPowerupType;}
+    public void setStoredPowerup(int b) { storedPowerupType = b;}
 
     public Dimension getSize() { return size; }
     public void setSize(Dimension d) { size = d; }

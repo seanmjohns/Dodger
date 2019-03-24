@@ -143,15 +143,10 @@ public class Dodger {
                 //Check to see if they have run into a powerup
                 ArrayList<Powerup> newPowerups = new ArrayList<>();
                 for(Powerup p : powerups) {
-                    System.out.println("eeee");
-                    if(p.type == 1 && player.getHasBrake()) { newPowerups.add(p); continue; }
+                    if(player.getStoredPowerup() != -1) { newPowerups.add(p); continue; }
                     if(player.intersects(p.x, p.y, (int)Powerup.SIZE.getWidth(), (int)Powerup.SIZE.getHeight())){
-                        System.out.println("eeee2");
-                        if(p.type == 1) {
-
-                            player.setHasBrake(true);
-                            continue;
-                        }
+                        player.setStoredPowerup(p.type);
+                        continue;
                     }
                     newPowerups.add(p);
                 }
@@ -360,18 +355,21 @@ class GameArea extends JPanel {
         //Display the controls. Note the 16; that is the height of the font
         //Background
         graphicsSettings.setPaint(new Color(0,0,0, 64)); //Translucent
-        graphicsSettings.fillRoundRect(5, (int)Dodger.size.getHeight() - fm.getHeight() - 5*3 - 16*3, fm.stringWidth("Move - WASD / Arrows") + 10, fm.getHeight() + 5*2 + 16*3, 10, 10);
+        graphicsSettings.fillRoundRect(5, (int)Dodger.size.getHeight() - fm.getHeight() - 5*4 - 16*4, fm.stringWidth("Move - WASD / Arrows") + 10, fm.getHeight() + 5*3 + 16*4, 10, 10);
         graphicsSettings.setPaint(new Color(0,0,0, 127)); //Translucent
-        graphicsSettings.drawRoundRect(5, (int)Dodger.size.getHeight() - fm.getHeight() - 5*3 - 16*3, fm.stringWidth("Move - WASD / Arrows") + 10, fm.getHeight() + 5*2 + 16*3, 10, 10);
+        graphicsSettings.drawRoundRect(5, (int)Dodger.size.getHeight() - fm.getHeight() - 5*4 - 16*4, fm.stringWidth("Move - WASD / Arrows") + 10, fm.getHeight() + 5*3 + 16*4, 10, 10);
         //The text
         graphicsSettings.setPaint(Color.BLACK);
-        graphicsSettings.drawString("Restart - R", 10, (int)Dodger.size.getHeight() - fm.getHeight());
-        graphicsSettings.drawString("Pause - E", 10, (int)Dodger.size.getHeight() - fm.getHeight() - 5 - 16);
-        graphicsSettings.drawString("Move - WASD / Arrows", 10, (int)Dodger.size.getHeight() - fm.getHeight() - 5*2 - 16*2);
+        graphicsSettings.drawString("Powerup - SPACE", 10, (int)Dodger.size.getHeight() - fm.getHeight());
+        graphicsSettings.drawString("Restart - R", 10, (int)Dodger.size.getHeight() - fm.getHeight() - 5 - 16);
+        graphicsSettings.drawString("Pause - E", 10, (int)Dodger.size.getHeight() - fm.getHeight() - 5*2 - 16*2);
+        graphicsSettings.drawString("Move - WASD / Arrows", 10, (int)Dodger.size.getHeight() - fm.getHeight() - 5*3 - 16*3);
 
-        //Draw if the player has a brake powerup
-        if(Dodger.player.getHasBrake()) {
-            graphicsSettings.setPaint(Color.BLUE);
+        //Draw the current powerup
+        if(Dodger.player.getStoredPowerup() != -1) {
+            if(Dodger.player.getStoredPowerup() == 1) {
+                graphicsSettings.setPaint(Color.BLUE);
+            }
             graphicsSettings.fillRect((int)Dodger.size.getWidth() - 15, (int)Dodger.size.getHeight() - 15, 10, 10);
             graphicsSettings.drawRect((int)Dodger.size.getWidth() - 15, (int)Dodger.size.getHeight() - 15, 10, 10);
         }
@@ -399,10 +397,10 @@ class KeyBinder extends AbstractAction {
                 Dodger.unpause();
             }
         }
-        else if(cmd.equals("brake") && Dodger.player.getHasBrake()) {
+        else if(cmd.equals("brake") && Dodger.player.getStoredPowerup() != -1) {
             Dodger.player.setxVel(0);
             Dodger.player.setyVel(0);
-            Dodger.player.setHasBrake(false);
+            Dodger.player.setStoredPowerup(1);
         }
         else if(cmd.contains("released")) {
             Dodger.keysHeld.remove(cmd.substring(8));
