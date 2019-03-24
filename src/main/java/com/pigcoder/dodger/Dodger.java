@@ -255,6 +255,7 @@ public class Dodger {
 
             @Override
             public void windowLostFocus(WindowEvent e) {
+                keysHeld.clear();
                 pause();
             }
         });
