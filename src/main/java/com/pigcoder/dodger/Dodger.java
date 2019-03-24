@@ -325,7 +325,7 @@ class GameArea extends JPanel {
             if(p.type == 1) { // Brake
                 graphicsSettings.setPaint(Color.BLUE);
             }
-            graphicsSettings.fillOval((int)p.x, (int)p.y, (int)Powerup.SIZE.getWidth(), (int)Powerup.SIZE.getHeight());
+            graphicsSettings.fillOval((int)p.x, (int)p.y, (int)Powerup.SIZE.getWidth() + 1, (int)Powerup.SIZE.getHeight() + 1); //NOTE the + 1 here. For some reason there is some extra white in the oval after drawn, so I fill it.
             graphicsSettings.setPaint(Color.BLACK);
             graphicsSettings.drawOval((int)p.x, (int)p.y, (int)Powerup.SIZE.getWidth(), (int)Powerup.SIZE.getHeight());
         }
@@ -369,7 +369,7 @@ class GameArea extends JPanel {
         //Draw if the player has a brake powerup
         if(Dodger.player.getHasBrake()) {
             graphicsSettings.setPaint(Color.BLUE);
-            graphicsSettings.fillOval((int)Dodger.size.getWidth() - 15, (int)Dodger.size.getHeight() - 15, 10, 10);
+            graphicsSettings.fillOval((int)Dodger.size.getWidth() - 15, (int)Dodger.size.getHeight() - 15, 11, 11);
             graphicsSettings.drawOval((int)Dodger.size.getWidth() - 15, (int)Dodger.size.getHeight() - 15, 10, 10);
         }
     }

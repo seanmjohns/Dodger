@@ -5,7 +5,7 @@ import java.awt.geom.Ellipse2D;
 
 public class Powerup extends Ellipse2D.Double {
 
-	public static final Dimension SIZE = new Dimension(25,25);
+	public static final Dimension SIZE = new Dimension(20,20);
 
 	public static final int numberOfpowerUpTypes = 1;
 
