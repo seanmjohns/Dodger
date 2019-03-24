@@ -37,6 +37,14 @@ public class Dodger {
     //Whether or not the game is paused
     public static boolean gamePaused = false;
 
+    //Repaint every 16 milliseconds (About 60 fps)
+    public static Timer repainter = new Timer(16, new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            gameArea.repaint();
+        }
+    });
+
     //Create enemies every 100 milliseconds
     public static Timer enemyCreator = new Timer(100, new ActionListener() {
         @Override
@@ -135,14 +143,6 @@ public class Dodger {
         }
     });
 
-    //Repaint every 16 milliseconds (About 60 fps)
-    public static Timer repainter = new Timer(16, new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            gameArea.repaint();
-        }
-    });
-
     //Increase the score every second
     public static Timer scoreKeeper = new Timer(1000, new AbstractAction() {
         @Override
@@ -160,6 +160,8 @@ public class Dodger {
     }
 
     public static void createGui() {
+
+        repainter.start();
 
         screen = new JFrame();
         screen.setResizable(false);
@@ -213,7 +215,6 @@ public class Dodger {
         screen.getContentPane().setPreferredSize(size);
         screen.pack();
 
-        repainter.start();
         inputManager.start();
         enemyCreator.start();
         enemyMover.start();
