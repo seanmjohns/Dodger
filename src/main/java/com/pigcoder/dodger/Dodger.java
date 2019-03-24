@@ -406,9 +406,20 @@ class KeyBinder extends AbstractAction {
             if(type == 1) { //Brake
                 Dodger.player.setxVel(0);
                 Dodger.player.setyVel(0);
-            } else if (type == 2) { //SpeedBoost
-                Dodger.player.setxVel(Dodger.player.getxVel() * 4);
-                Dodger.player.setyVel(Dodger.player.getyVel() * 4);
+            } else if (type == 2) { //SpeedBoost. The values are fine tuned so there is no way to tell what would be a good value here without playing
+                if(Dodger.keysHeld.contains("up")) {
+                    Dodger.player.decreaseyVel(3.5);
+                }
+                if(Dodger.keysHeld.contains("down")) {
+                    Dodger.player.increaseyVel(3.5);
+                }
+                if(Dodger.keysHeld.contains("left")) {
+                    Dodger.player.decreasexVel(3.5);
+                }
+                if(Dodger.keysHeld.contains("right")) {
+                    Dodger.player.increasexVel(3.5);
+                }
+
             }
             Dodger.player.setStoredPowerup(-1);
         }
