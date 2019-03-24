@@ -163,6 +163,7 @@ public class Dodger {
         }
     });
 
+    //Add a powerup to the screen every 5 seconds
     public static Timer powerupAdder = new Timer(5000, new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -255,7 +256,7 @@ public class Dodger {
 
             @Override
             public void windowLostFocus(WindowEvent e) {
-                keysHeld.clear();
+                if(!gamePaused) { keysHeld.clear(); }
                 pause();
             }
         });
@@ -270,10 +271,10 @@ public class Dodger {
         //Set the player's position
         gameOver = false;
         score = 0;
-        unpause();
         enemies.clear();
         powerups.clear();
         player = new Player((int)size.getWidth()/2, (int)size.getHeight()/2);
+        unpause(); //If the game was paused, then unpause it
     }
 
     public static void pause() {
