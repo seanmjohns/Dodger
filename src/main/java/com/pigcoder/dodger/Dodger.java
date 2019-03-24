@@ -208,7 +208,7 @@ public class Dodger {
         im.put(KeyStroke.getKeyStroke("LEFT"), "left");
         im.put(KeyStroke.getKeyStroke("DOWN"), "down");
         im.put(KeyStroke.getKeyStroke("RIGHT"), "right");
-        im.put(KeyStroke.getKeyStroke("SPACE"), "brake");
+        im.put(KeyStroke.getKeyStroke("SPACE"), "powerup");
 
         im.put(KeyStroke.getKeyStroke("R"), "restart");
         im.put(KeyStroke.getKeyStroke("E"), "pause");
@@ -219,7 +219,7 @@ public class Dodger {
         am.put("right", new KeyBinder("right"));
         am.put("restart", new KeyBinder("restart"));
         am.put("pause", new KeyBinder("pause"));
-        am.put("brake", new KeyBinder("brake"));
+        am.put("powerup", new KeyBinder("powerup"));
 
         //Released keybinder
         im.put(KeyStroke.getKeyStroke("released W"), "upreleased");
@@ -322,6 +322,8 @@ class GameArea extends JPanel {
         for(Powerup p : Dodger.powerups) {
             if(p.type == 1) { // Brake
                 graphicsSettings.setPaint(Color.BLUE);
+            } else if (p.type == 2) { // Speed Boost
+                graphicsSettings.setPaint(Color.CYAN);
             }
             graphicsSettings.fillRect((int)p.x, (int)p.y, (int)Powerup.SIZE.getWidth(), (int)Powerup.SIZE.getHeight());
             graphicsSettings.setPaint(Color.BLACK);
@@ -369,6 +371,8 @@ class GameArea extends JPanel {
         if(Dodger.player.getStoredPowerup() != -1) {
             if(Dodger.player.getStoredPowerup() == 1) {
                 graphicsSettings.setPaint(Color.BLUE);
+            } else if (Dodger.player.getStoredPowerup() == 2) {
+                graphicsSettings.setPaint(Color.CYAN);
             }
             graphicsSettings.fillRect((int)Dodger.size.getWidth() - 15, (int)Dodger.size.getHeight() - 15, 10, 10);
             graphicsSettings.drawRect((int)Dodger.size.getWidth() - 15, (int)Dodger.size.getHeight() - 15, 10, 10);
@@ -397,10 +401,16 @@ class KeyBinder extends AbstractAction {
                 Dodger.unpause();
             }
         }
-        else if(cmd.equals("brake") && Dodger.player.getStoredPowerup() != -1) {
-            Dodger.player.setxVel(0);
-            Dodger.player.setyVel(0);
-            Dodger.player.setStoredPowerup(1);
+        else if(cmd.equals("powerup") && Dodger.player.getStoredPowerup() != -1) {
+            int type = Dodger.player.getStoredPowerup();
+            if(type == 1) { //Brake
+                Dodger.player.setxVel(0);
+                Dodger.player.setyVel(0);
+            } else if (type == 2) { //SpeedBoost
+                Dodger.player.setxVel(Dodger.player.getxVel() * 4);
+                Dodger.player.setyVel(Dodger.player.getyVel() * 4);
+            }
+            Dodger.player.setStoredPowerup(-1);
         }
         else if(cmd.contains("released")) {
             Dodger.keysHeld.remove(cmd.substring(8));
