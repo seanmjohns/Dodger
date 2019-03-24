@@ -1,9 +1,9 @@
 package com.pigcoder.dodger;
 
 import java.awt.*;
-import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 
-public class Powerup extends Ellipse2D.Double {
+public class Powerup extends Rectangle2D.Double {
 
 	public static final Dimension SIZE = new Dimension(20,20);
 
