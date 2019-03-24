@@ -4,9 +4,8 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
 
-import java.beans.PropertyChangeListener;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.ArrayList;
-import java.util.Random;
 
 public class Dodger {
 
@@ -23,10 +22,13 @@ public class Dodger {
     public static int score;
 
     //All enemies
-    public static ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+    public static ArrayList<Enemy> enemies = new ArrayList<>();
+
+    //All powerups in the gameArea
+    public static ArrayList<Powerup> powerups = new ArrayList<>();
 
     //All keys
-    public static ArrayList<String> keysHeld = new ArrayList<String>();
+    public static ArrayList<String> keysHeld = new ArrayList<>();
 
     //Screen dimensions
     public static Dimension size = new Dimension(400,400);
@@ -52,15 +54,13 @@ public class Dodger {
             if(!gameOver) {
                 //Create a new enemy
 
-                Random random = new Random();
-
                 //A random size between the minimum size and maximum size, the enemy is always a square
-                int size = random.nextInt(Enemy.sizeBoundaryUpper - Enemy.sizeBoundaryLower) + Enemy.sizeBoundaryLower;
+                int size = ThreadLocalRandom.current().nextInt(Enemy.sizeBoundaryLower, Enemy.sizeBoundaryUpper);
 
                 //A random speed (1 or 2)
                 double speed = Math.random()*1.5 + 0.5;
 
-                enemies.add(new Enemy(random.nextInt((int)Dodger.size.getWidth() - size), (int)Dodger.size.getHeight(), new Dimension(size, size), speed));
+                enemies.add(new Enemy(ThreadLocalRandom.current().nextInt(0, (int)Dodger.size.getWidth() - size), (int)Dodger.size.getHeight(), new Dimension(size, size), speed));
 
                 //Remove any enemies that are not on the screen
                 ArrayList<Enemy> updatedEnemies = new ArrayList<>();
@@ -139,6 +139,20 @@ public class Dodger {
                 //Move the player according to the velocity
                 player.x+=player.getxVel();
                 player.y+=player.getyVel();
+
+                //Check to see if they have run into a powerup
+                ArrayList<Powerup> newPowerups = new ArrayList<>();
+                for(Powerup p : powerups) {
+                    if(p.type == 1 && player.getHasBrake()) { newPowerups.add(p); continue; }
+                    if(player.intersects((int)p.x, (int)p.y, (int)Powerup.SIZE.getWidth(), (int)Powerup.SIZE.getHeight())) {
+                        if(p.type == 1) {
+                            player.setHasBrake(true);
+                            continue;
+                        }
+                    }
+                    newPowerups.add(p);
+                }
+                Dodger.powerups = newPowerups;
             }
         }
     });
@@ -148,6 +162,19 @@ public class Dodger {
         @Override
         public void actionPerformed(ActionEvent e) {
             score++;
+        }
+    });
+
+    public static Timer powerupAdder = new Timer(5000, new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            //Type can only be 1 or 2
+            int type = ThreadLocalRandom.current().nextInt(1, Powerup.numberOfpowerUpTypes + 1);
+            //Position
+            int x = ThreadLocalRandom.current().nextInt(0, (int)(Dodger.size.getWidth() - Powerup.SIZE.getWidth() + 1));
+            int y = ThreadLocalRandom.current().nextInt(0, (int)(Dodger.size.getHeight() - Powerup.SIZE.getHeight() + 1));
+            //Create it
+            powerups.add(new Powerup(type, x, y));
         }
     });
 
@@ -183,6 +210,7 @@ public class Dodger {
         im.put(KeyStroke.getKeyStroke("LEFT"), "left");
         im.put(KeyStroke.getKeyStroke("DOWN"), "down");
         im.put(KeyStroke.getKeyStroke("RIGHT"), "right");
+        im.put(KeyStroke.getKeyStroke("SPACE"), "brake");
 
         im.put(KeyStroke.getKeyStroke("R"), "restart");
         im.put(KeyStroke.getKeyStroke("E"), "pause");
@@ -193,6 +221,7 @@ public class Dodger {
         am.put("right", new KeyBinder("right"));
         am.put("restart", new KeyBinder("restart"));
         am.put("pause", new KeyBinder("pause"));
+        am.put("brake", new KeyBinder("brake"));
 
         //Released keybinder
         im.put(KeyStroke.getKeyStroke("released W"), "upreleased");
@@ -219,6 +248,7 @@ public class Dodger {
         enemyCreator.start();
         enemyMover.start();
         scoreKeeper.start();
+        powerupAdder.start();
 
         //When the window is not focused the game needs to be paused
         screen.addWindowFocusListener(new WindowFocusListener() {
@@ -243,6 +273,7 @@ public class Dodger {
         score = 0;
         unpause();
         enemies.clear();
+        powerups.clear();
         player = new Player((int)size.getWidth()/2, (int)size.getHeight()/2);
     }
 
@@ -251,6 +282,7 @@ public class Dodger {
         enemyMover.stop();
         inputManager.stop();
         scoreKeeper.stop();
+        powerupAdder.stop();
         gamePaused = true;
     }
 
@@ -259,6 +291,7 @@ public class Dodger {
         enemyMover.start();
         inputManager.start();
         scoreKeeper.start();
+        powerupAdder.start();
         gamePaused = false;
     }
 
@@ -267,6 +300,7 @@ public class Dodger {
         enemyMover.stop();
         inputManager.stop();
         scoreKeeper.stop();
+        powerupAdder.stop();
     }
 
 }
@@ -285,6 +319,16 @@ class GameArea extends JPanel {
         //Draw the background
         graphicsSettings.setPaint(Color.WHITE);
         graphicsSettings.fillRect(0, 0, (int)Dodger.size.getWidth(), (int)Dodger.size.getHeight());
+
+        //Draw powerups
+        for(Powerup p : Dodger.powerups) {
+            if(p.type == 1) { // Brake
+                graphicsSettings.setPaint(Color.BLUE);
+            }
+            graphicsSettings.fillOval((int)p.x, (int)p.y, (int)Powerup.SIZE.getWidth(), (int)Powerup.SIZE.getHeight());
+            graphicsSettings.setPaint(Color.BLACK);
+            graphicsSettings.drawOval((int)p.x, (int)p.y, (int)Powerup.SIZE.getWidth(), (int)Powerup.SIZE.getHeight());
+        }
 
         //Draw the player
         graphicsSettings.setPaint(Color.GREEN);
@@ -321,6 +365,13 @@ class GameArea extends JPanel {
         graphicsSettings.drawString("Restart - R", 10, (int)Dodger.size.getHeight() - fm.getHeight());
         graphicsSettings.drawString("Pause - E", 10, (int)Dodger.size.getHeight() - fm.getHeight() - 5 - 16);
         graphicsSettings.drawString("Move - WASD / Arrows", 10, (int)Dodger.size.getHeight() - fm.getHeight() - 5*2 - 16*2);
+
+        //Draw if the player has a brake powerup
+        if(Dodger.player.getHasBrake()) {
+            graphicsSettings.setPaint(Color.BLUE);
+            graphicsSettings.fillOval((int)Dodger.size.getWidth() - 15, (int)Dodger.size.getHeight() - 15, 10, 10);
+            graphicsSettings.drawOval((int)Dodger.size.getWidth() - 15, (int)Dodger.size.getHeight() - 15, 10, 10);
+        }
     }
 
 }
@@ -344,6 +395,11 @@ class KeyBinder extends AbstractAction {
             } else {
                 Dodger.unpause();
             }
+        }
+        else if(cmd.equals("brake") && Dodger.player.getHasBrake()) {
+            Dodger.player.setxVel(0);
+            Dodger.player.setyVel(0);
+            Dodger.player.setHasBrake(false);
         }
         else if(cmd.contains("released")) {
             Dodger.keysHeld.remove(cmd.substring(8));

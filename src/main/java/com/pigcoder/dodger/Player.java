@@ -9,6 +9,8 @@ public class Player extends Rectangle2D.Double {
 
     private Dimension size = defaultSize;
 
+    private boolean hasBrake = false;
+
     private double xVel;
     private double yVel;
 
@@ -20,6 +22,9 @@ public class Player extends Rectangle2D.Double {
     public void setyVel(double yVel) { this.yVel = yVel; }
     public void increaseyVel(double a) { yVel+=a; }
     public void decreaseyVel(double a) { yVel-=a; }
+
+    public boolean getHasBrake() { return hasBrake;}
+    public void setHasBrake(boolean b) { hasBrake = b;}
 
     public Dimension getSize() { return size; }
     public void setSize(Dimension d) { size = d; }
