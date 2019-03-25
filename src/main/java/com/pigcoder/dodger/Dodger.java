@@ -24,6 +24,9 @@ public class Dodger {
     //Stores the selected menu button
     public static int selectedButton = 1;
 
+    //Whether or not the timers have been made
+    public static boolean timersCreated = false;
+
     //All enemies
     public static ArrayList<Enemy> enemies = new ArrayList<>();
 
@@ -49,9 +52,21 @@ public class Dodger {
     public static Timer repainter = new Timer(16, new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
-            area.repaint();
+            if(area != null ) {area.repaint(); }
         }
     });
+
+    public static Timer enemyCreator;
+
+    public static Timer enemyMover;
+
+    public static Timer inputManager;
+
+    public static Timer scoreKeeper;
+
+    public static Timer powerupAdder;
+
+    public static Timer collisionManager;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -131,6 +146,13 @@ public class Dodger {
 
         screen.setVisible(true);
 
+        area = new MenuArea();
+        area.setPreferredSize(size);
+        screen.setContentPane(area);
+        screen.pack();
+
+        createTimers();
+
         goToMenu();
 
     }
@@ -158,48 +180,56 @@ public class Dodger {
         screen.setContentPane(area);
         screen.pack();
 
-        enemyCreator.stop();
-        enemyMover.stop();
-        inputManager.stop();
-        scoreKeeper.stop();
-        powerupAdder.stop();
+        stopAllTimers();
 
         enemies.clear();
         player = null;
         gameInProgress = false;
         gamePaused = false;
         gameOver = false;
+        score = 0;
         keysHeld.clear();
 
+        System.out.println("eeeee3");
         enemyCreator.start();
         enemyMover.start();
     }
 
     public static void pause() {
+        System.out.println("eeeee2");
+        stopAllTimers();
+        gamePaused = true;
+    }
+
+    public static void unpause() {
+        System.out.println("eeeee");
+        startAllTimers();
+        gamePaused = false;
+    }
+
+    public static void died() {
+        stopAllTimers();
+        gameOver = true;
+    }
+
+    public static void stopAllTimers() {
         enemyCreator.stop();
         enemyMover.stop();
         inputManager.stop();
         scoreKeeper.stop();
         powerupAdder.stop();
-        gamePaused = true;
+        collisionManager.stop();
     }
 
-    public static void unpause() {
+    public static void startAllTimers() {
         enemyCreator.start();
         enemyMover.start();
         inputManager.start();
         scoreKeeper.start();
         powerupAdder.start();
-        gamePaused = false;
+        collisionManager.start();
     }
 
-    public static void died() {
-        enemyCreator.stop();
-        enemyMover.stop();
-        inputManager.stop();
-        scoreKeeper.stop();
-        powerupAdder.stop();
-    }
 
     private static class MenuArea extends JPanel {
 
@@ -453,138 +483,158 @@ public class Dodger {
 
     }
 
-    //Create enemies every 100 milliseconds
-    public static Timer enemyCreator = new Timer(100, new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if(!gameOver) {
-                //Create a new enemy
+    public static void createTimers() {
 
-                //A random size between the minimum size and maximum size, the enemy is always a square
-                int size = ThreadLocalRandom.current().nextInt(Enemy.sizeBoundaryLower, Enemy.sizeBoundaryUpper);
+        //Create enemies every 100 milliseconds
+        enemyCreator = new Timer(100, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (!gameOver) {
+                    //Create a new enemy
 
-                //A random speed (1 or 2)
-                double speed = Math.random()*1.5 + 0.5;
+                    //A random size between the minimum size and maximum size, the enemy is always a square
+                    int size = ThreadLocalRandom.current().nextInt(Enemy.sizeBoundaryLower, Enemy.sizeBoundaryUpper);
 
-                enemies.add(new Enemy(ThreadLocalRandom.current().nextInt(0, (int)Dodger.size.getWidth() - size), (int)Dodger.size.getHeight(), new Dimension(size, size), speed));
+                    //A random speed (1 or 2)
+                    double speed = Math.random() * 1.5 + 0.5;
 
-                //Remove any enemies that are not on the screen
-                ArrayList<Enemy> updatedEnemies = new ArrayList<>();
-                for (Enemy enemy : enemies) {
-                    if (!(enemy.y + enemy.height < 1)) {
-                        updatedEnemies.add(enemy);
+                    enemies.add(new Enemy(ThreadLocalRandom.current().nextInt(0, (int) Dodger.size.getWidth() - size), (int) Dodger.size.getHeight(), new Dimension(size, size), speed));
+
+                    //Remove any enemies that are not on the screen
+                    ArrayList<Enemy> updatedEnemies = new ArrayList<>();
+                    for (Enemy enemy : enemies) {
+                        if (!(enemy.y + enemy.height < 1)) {
+                            updatedEnemies.add(enemy);
+                        }
                     }
-                }
-                enemies = updatedEnemies;
-            }
-        }
-    });
-
-    //Move the enemies every 25 milliseconds.
-    public static Timer enemyMover = new Timer(25, new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            //Move the enemies and check for collisions
-            if(!gameOver) {
-                for(Enemy enemy : enemies) {
-                    enemy.move();
-                    if (player != null && player.intersects(enemy)) {
-                        died();
-                        gameOver = true;
-                    }
+                    enemies = updatedEnemies;
                 }
             }
-        }
-    });
+        });
 
-    //Get player input every 20 milliseconds
-    public static Timer inputManager = new Timer(20, new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            //In-game input
-            if(!gameOver && !gamePaused && gameInProgress) {
-                if(player == null) { return; }
-                //Vertical movement
-                if(keysHeld.contains("up")) {
-                    player.decreaseyVel(0.15);
-                }
-                else if(keysHeld.contains("down")) {
-                    player.increaseyVel(0.15);
-                }
-                else {//Slow the player down if no keys are being pressed
-                    player.decreaseyVel(player.getyVel() / 15); //Cuts speed to 15%
-                }
-
-                //Horizontal movement
-                if(keysHeld.contains("left")) {
-                    player.decreasexVel(0.15);
-                }
-                else if(keysHeld.contains("right")) {
-                    player.increasexVel(0.15);
-                }
-                else { //Slow the player down if no keys are being pressed
-                    player.decreasexVel(player.getxVel() / 15); //Cuts speed to 15%
-                }
-
-                //If the player has run into a wall, stop them
-                if(player.x + player.getxVel() <= 0) {
-                    player.x = 0;
-                    player.setxVel(0);
-                }
-                if(player.x + player.getSize().getWidth() + player.getxVel() >= size.getWidth()) {
-                    player.x = size.getWidth() -  player.getSize().getWidth();
-                    player.setxVel(0);
-                }
-                if(player.y + player.getyVel() <= 0) {
-                    player.y = 0;
-                    player.setyVel(0);
-                }
-                if(player.y + player.getSize().getWidth() + player.getyVel() >= size.getHeight()) {
-                    player.y = size.getHeight() - player.getSize().getWidth();
-                    player.setyVel(0);
-                }
-                //Move the player according to the velocity
-                player.x+=player.getxVel();
-                player.y+=player.getyVel();
-
-                //Check to see if they have run into a powerup
-                ArrayList<Powerup> newPowerups = new ArrayList<>();
-                for(Powerup p : powerups) {
-                    if(player.getStoredPowerup() != -1) { newPowerups.add(p); continue; }
-                    if(player.intersects(p.x, p.y, (int)Powerup.SIZE.getWidth(), (int)Powerup.SIZE.getHeight())){
-                        player.setStoredPowerup(p.type);
-                        continue;
+        //Move the enemies every 25 milliseconds.
+        enemyMover = new Timer(25, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //Move the enemies and check for collisions
+                if (!gameOver) {
+                    for (Enemy enemy : enemies) {
+                        enemy.move();
                     }
-                    newPowerups.add(p);
                 }
-                Dodger.powerups = newPowerups;
-            } else { //Menu area
-
             }
-        }
-    });
+        });
 
-    //Increase the score every second
-    public static Timer scoreKeeper = new Timer(1000, new AbstractAction() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if(player == null) { return; }
-            score++;
-        }
-    });
+        //Collision detection
+        collisionManager = new Timer(16, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (!gameOver) {
+                    for (Enemy enemy : enemies) {
+                        if (player != null && player.intersects(enemy)) {
+                            died();
+                            gameOver = true;
+                        }
+                    }
+                    //Check to see if they have run into a powerup
+                    ArrayList<Powerup> newPowerups = new ArrayList<>();
+                    for (Powerup p : powerups) {
+                        if (player.getStoredPowerup() != -1) {
+                            newPowerups.add(p);
+                            continue;
+                        }
+                        if (player.intersects(p.x, p.y, (int) Powerup.SIZE.getWidth(), (int) Powerup.SIZE.getHeight())) {
+                            player.setStoredPowerup(p.type);
+                            continue;
+                        }
+                        newPowerups.add(p);
+                    }
+                    Dodger.powerups = newPowerups;
+                }
+            }
+        });
 
-    //Add a powerup to the screen every 5 seconds
-    public static Timer powerupAdder = new Timer(5000, new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if(player == null) { return; }
-            //Type can only be 1 or 2
-            int type = ThreadLocalRandom.current().nextInt(1, Powerup.numberOfpowerUpTypes + 1);
-            //Position
-            int x = ThreadLocalRandom.current().nextInt(0, (int)(Dodger.size.getWidth() - Powerup.SIZE.getWidth() + 1));
-            int y = ThreadLocalRandom.current().nextInt(0, (int)(Dodger.size.getHeight() - Powerup.SIZE.getHeight() + 1));
-            //Create it
-            powerups.add(new Powerup(type, x, y));
-        }
-    });
+        //Get player input every 20 milliseconds
+        inputManager = new Timer(20, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //In-game input
+                if (!gameOver && !gamePaused && gameInProgress) {
+                    if (player == null) {
+                        return;
+                    }
+                    //Vertical movement
+                    if (keysHeld.contains("up")) {
+                        player.decreaseyVel(0.15);
+                    } else if (keysHeld.contains("down")) {
+                        player.increaseyVel(0.15);
+                    } else {//Slow the player down if no keys are being pressed
+                        player.decreaseyVel(player.getyVel() / 15); //Cuts speed to 15%
+                    }
+
+                    //Horizontal movement
+                    if (keysHeld.contains("left")) {
+                        player.decreasexVel(0.15);
+                    } else if (keysHeld.contains("right")) {
+                        player.increasexVel(0.15);
+                    } else { //Slow the player down if no keys are being pressed
+                        player.decreasexVel(player.getxVel() / 15); //Cuts speed to 15%
+                    }
+
+                    //If the player has run into a wall, stop them
+                    if (player.x + player.getxVel() <= 0) {
+                        player.x = 0;
+                        player.setxVel(0);
+                    }
+                    if (player.x + player.getSize().getWidth() + player.getxVel() >= size.getWidth()) {
+                        player.x = size.getWidth() - player.getSize().getWidth();
+                        player.setxVel(0);
+                    }
+                    if (player.y + player.getyVel() <= 0) {
+                        player.y = 0;
+                        player.setyVel(0);
+                    }
+                    if (player.y + player.getSize().getWidth() + player.getyVel() >= size.getHeight()) {
+                        player.y = size.getHeight() - player.getSize().getWidth();
+                        player.setyVel(0);
+                    }
+                    //Move the player according to the velocity
+                    player.x += player.getxVel();
+                    player.y += player.getyVel();
+                } else { //Menu area
+
+                }
+            }
+        });
+
+        //Increase the score every second
+        scoreKeeper = new Timer(1000, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (player == null) {
+                    return;
+                }
+                score++;
+            }
+        });
+
+        //Add a powerup to the screen every 5 seconds
+        powerupAdder = new Timer(5000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (player == null) {
+                    return;
+                }
+                //Type can only be 1 or 2
+                int type = ThreadLocalRandom.current().nextInt(1, Powerup.numberOfpowerUpTypes + 1);
+                //Position
+                int x = ThreadLocalRandom.current().nextInt(0, (int) (Dodger.size.getWidth() - Powerup.SIZE.getWidth() + 1));
+                int y = ThreadLocalRandom.current().nextInt(0, (int) (Dodger.size.getHeight() - Powerup.SIZE.getHeight() + 1));
+                //Create it
+                powerups.add(new Powerup(type, x, y));
+            }
+        });
+
+        timersCreated = true;
+    }
 }
