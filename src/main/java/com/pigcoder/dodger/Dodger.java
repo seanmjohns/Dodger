@@ -52,9 +52,6 @@ public class Dodger {
     //Whether or not the game is paused
     public static boolean gamePaused = false;
 
-    //Whether or not the game countdown is in progress
-    public static boolean inCountdown = false;
-
     //Whether a game is in progress
     public static boolean gameInProgress = false;
 
@@ -105,7 +102,7 @@ public class Dodger {
             @Override
             public void windowLostFocus(WindowEvent e) {
                 if(!gamePaused) { keysHeld.clear(); }
-                if(gameInProgress) { pause(); }
+                if(gameInProgress && !((GameArea)area).waitingToStart) { pause(); }
             }
         });
 
@@ -125,12 +122,14 @@ public class Dodger {
 
     }
 
-    public static void startGame(int difficulty) {
+    public static void startGame(int diff) {
         //Set the player's position
         area = new GameArea();
         area.setPreferredSize(size);
         screen.setContentPane(area);
         screen.pack();
+
+        difficulty = diff;
 
         gameOver = false;
         score = 0;
@@ -206,6 +205,10 @@ public class Dodger {
 
 
     private static class MenuArea extends JPanel {
+
+        public int xOffset = 0;
+        public int yOffset = 0;
+
 
         //Main menu stuff
         public static String[] mainMenuButtonTexts = {"PLAY", "HELP", "QUIT"};
@@ -485,32 +488,14 @@ public class Dodger {
                 this.buttonNumber = buttonNumber;
 	        }
         }
+
     }
 
     private static class GameArea extends JPanel {
 
-        public int countdownNumber = 3;
+        public boolean waitingToStart = true;
 
-        Timer countdown;
-
-        public GameArea() {
-            inCountdown = true;
-            countdown = new Timer(1000, new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent actionEvent) {
-                    countdownNumber--;
-                    checkIfCountdownDone();
-                }
-            });
-            countdown.start();
-        }
-
-        public void checkIfCountdownDone() {
-            if(countdownNumber <= 0) {
-                inCountdown = false;
-                countdown.stop();
-            }
-        }
+        public GameArea() { }
 
         @Override
         public void paintComponent(Graphics g) {
@@ -567,9 +552,9 @@ public class Dodger {
                 //Display the controls. Note the 16; that is the height of the font
                 //Background
                 graphicsSettings.setPaint(new Color(0, 0, 0, 64)); //Translucent
-                graphicsSettings.fillRoundRect(5, (int) Dodger.size.getHeight() - fm.getHeight() - 5 * 5 - 16 * 5, fm.stringWidth("Powerup - Space") + 10, fm.getHeight() + 5 * 4 + 16 * 5, 10, 10);
+                graphicsSettings.fillRoundRect(5, (int) Dodger.size.getHeight() - fm.getHeight() - 5 * 5 - 16 * 5, fm.stringWidth("Pause/Controls - E") + 10, fm.getHeight() + 5 * 4 + 16 * 5, 10, 10);
                 graphicsSettings.setPaint(new Color(0, 0, 0, 127)); //Translucent
-                graphicsSettings.drawRoundRect(5, (int) Dodger.size.getHeight() - fm.getHeight() - 5 * 5 - 16 * 5, fm.stringWidth("Powerup - Space") + 10, fm.getHeight() + 5 * 4 + 16 * 5, 10, 10);
+                graphicsSettings.drawRoundRect(5, (int) Dodger.size.getHeight() - fm.getHeight() - 5 * 5 - 16 * 5, fm.stringWidth("Pause/Controls - E") + 10, fm.getHeight() + 5 * 4 + 16 * 5, 10, 10);
                 //The text
                 graphicsSettings.setPaint(Color.BLACK);
                 graphicsSettings.drawString("Quit - Escape", 10, (int) Dodger.size.getHeight() - fm.getHeight());
@@ -580,13 +565,13 @@ public class Dodger {
             } else {
                 //Display the pause and quit controls.
                 graphicsSettings.setPaint(new Color(0, 0, 0, 64)); //Translucent
-                graphicsSettings.fillRoundRect(5, (int) Dodger.size.getHeight() - fm.getHeight() - 5 * 2 - 16 * 2, fm.stringWidth("Powerup - Space") + 10, fm.getHeight() + 5 + 16 * 2, 10, 10);
+                graphicsSettings.fillRoundRect(5, (int) Dodger.size.getHeight() - fm.getHeight() - 5 * 2 - 16 * 2, fm.stringWidth("Pause/Controls - E") + 10, fm.getHeight() + 5 + 16 * 2, 10, 10);
                 graphicsSettings.setPaint(new Color(0, 0, 0, 127)); //Translucent
-                graphicsSettings.drawRoundRect(5, (int) Dodger.size.getHeight() - fm.getHeight() - 5 * 2 - 16 * 2, fm.stringWidth("Powerup - Space") + 10, fm.getHeight() + 5 + 16 * 2, 10, 10);
+                graphicsSettings.drawRoundRect(5, (int) Dodger.size.getHeight() - fm.getHeight() - 5 * 2 - 16 * 2, fm.stringWidth("Pause/Controls - E") + 10, fm.getHeight() + 5 + 16 * 2, 10, 10);
                 //The text
                 graphicsSettings.setPaint(Color.BLACK);
                 graphicsSettings.drawString("Quit - Escape", 10, (int) Dodger.size.getHeight() - fm.getHeight());
-                graphicsSettings.drawString("Pause - E", 10, (int) Dodger.size.getHeight() - fm.getHeight() - 5 - 16 );
+                graphicsSettings.drawString("Pause/Controls - E", 10, (int) Dodger.size.getHeight() - fm.getHeight() - 5 - 16 );
             }
 
             //Draw the current powerup
@@ -608,11 +593,25 @@ public class Dodger {
                 graphicsSettings.drawString("Press R to restart", (int)size.getWidth()/2 - graphicsSettings.getFontMetrics().stringWidth("Press R to restart")/2, 20);
             }
 
-            if(inCountdown) {
+            if(waitingToStart) {
                 graphicsSettings.setFont(new Font(fm.getFont().getFontName(), Font.BOLD, 12));
                 graphicsSettings.setPaint(Color.BLACK);
-                graphicsSettings.drawString(Integer.toString(countdownNumber), (int)size.getWidth()/2 - graphicsSettings.getFontMetrics().stringWidth(Integer.toString(countdownNumber))/2, (int)size.getHeight()/4 - graphicsSettings.getFontMetrics().getHeight()/2);
+                graphicsSettings.drawString("Press SPACE to Start", (int)size.getWidth()/2 - graphicsSettings.getFontMetrics().stringWidth("Press SPACE to Start")/2, (int)size.getHeight()/4 - graphicsSettings.getFontMetrics().getHeight()/2);
             }
+
+            //Draw the difficulty
+            graphicsSettings.setPaint(Color.BLACK);
+            graphicsSettings.setFont(new Font(fm.getFont().getFontName(), Font.BOLD, 12));
+            String text = "easy";
+            if(difficulty == 1) {
+                text = "EASY";
+            } else if(difficulty == 2) {
+                text = "NORMAL";
+            } else if(difficulty == 3) {
+                text = "HARD";
+            }
+            graphicsSettings.drawString(text, (int)size.getWidth()/2 - graphicsSettings.getFontMetrics().stringWidth(text)/2, (int)size.getHeight() - graphicsSettings.getFontMetrics().getHeight() - 10);
+
         }
 
     }
@@ -678,33 +677,37 @@ public class Dodger {
             if(area instanceof GameArea) { //In-Game input
                 if (cmd.equals("restart")) {
                     Dodger.startGame(difficulty);
-                } else if (cmd.equals("pause") && !Dodger.gameOver) {
+                } else if (cmd.equals("pause") && !Dodger.gameOver && !((GameArea)area).waitingToStart) {
                     if (!Dodger.gamePaused) {
                         Dodger.pause();
                     } else {
                         Dodger.unpause();
                     }
-                } else if (cmd.equals("powerup") && Dodger.player.getStoredPowerup() != -1) {
-                    int type = Dodger.player.getStoredPowerup();
-                    if (type == 1) { //Brake
-                        Dodger.player.setxVel(0);
-                        Dodger.player.setyVel(0);
-                    } else if (type == 2) { //SpeedBoost. The values are fine tuned so there is no way to tell what would be a good value here without playing
-                        if (Dodger.keysHeld.contains("up")) {
-                            Dodger.player.decreaseyVel(3.5);
+                } else if (cmd.equals("powerup")) {
+                    if(((GameArea)area).waitingToStart) {
+                        ((GameArea)area).waitingToStart = false;
+                    } else if (player.getStoredPowerup() != -1) {
+                        int type = Dodger.player.getStoredPowerup();
+                        if (type == 1) { //Brake
+                            Dodger.player.setxVel(0);
+                            Dodger.player.setyVel(0);
+                        } else if (type == 2) { //SpeedBoost. The values are fine tuned so there is no way to tell what would be a good value here without playing
+                            if (Dodger.keysHeld.contains("up")) {
+                                Dodger.player.decreaseyVel(3.5);
+                            }
+                            if (Dodger.keysHeld.contains("down")) {
+                                Dodger.player.increaseyVel(3.5);
+                            }
+                            if (Dodger.keysHeld.contains("left")) {
+                                Dodger.player.decreasexVel(3.5);
+                            }
+                            if (Dodger.keysHeld.contains("right")) {
+                                Dodger.player.increasexVel(3.5);
+                            }
+                        } else if (type == 3) { } // This is the armor powerup, so it doesnt do anything
+                        if (type != 3) {
+                            Dodger.player.setStoredPowerup(-1);
                         }
-                        if (Dodger.keysHeld.contains("down")) {
-                            Dodger.player.increaseyVel(3.5);
-                        }
-                        if (Dodger.keysHeld.contains("left")) {
-                            Dodger.player.decreasexVel(3.5);
-                        }
-                        if (Dodger.keysHeld.contains("right")) {
-                            Dodger.player.increasexVel(3.5);
-                        }
-                    } else if(type == 3) { } // This is the armor powerup, so it doesnt do anything
-                    if(type != 3) {
-                        Dodger.player.setStoredPowerup(-1);
                     }
                 } else if (cmd.contains("released")) {
                     Dodger.keysHeld.remove(cmd.substring(8));
@@ -788,7 +791,7 @@ public class Dodger {
         enemyCreator = new Timer(100, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if ((player != null && !inCountdown) || (area instanceof MenuArea && !backgroundDisabled)) {
+                if ((player != null  && !((GameArea)area).waitingToStart && !gamePaused) || (area instanceof MenuArea && !backgroundDisabled)) {
                     //Create a new enemy
 
                     //A random size between the minimum size and maximum size, the enemy is always a square
@@ -815,7 +818,7 @@ public class Dodger {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //Move the enemies and check for collisions
-                if ((player != null && !inCountdown && !gamePaused) || (area instanceof MenuArea && !backgroundDisabled)) {
+                if ((player != null && !((GameArea)area).waitingToStart && !gamePaused) || (area instanceof MenuArea && !backgroundDisabled)) {
                     for (Enemy enemy : enemies) {
                         enemy.move();
                     }
@@ -827,7 +830,7 @@ public class Dodger {
         collisionManager = new Timer(16, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                if (player != null && !inCountdown) {
+                if (player != null  && !((GameArea)area).waitingToStart && !gamePaused) {
                     ArrayList<Enemy> newEnemies = new ArrayList<>();
                     for (Enemy enemy : enemies) {
                         if (player.intersects(enemy)) {
@@ -864,7 +867,7 @@ public class Dodger {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //In-game input
-                if (player != null) {
+                if (player != null  && !((GameArea)area).waitingToStart && !gamePaused) {
                     //Vertical movement
                     if (keysHeld.contains("up")) {
                         player.decreaseyVel(0.15);
@@ -913,7 +916,7 @@ public class Dodger {
         scoreKeeper = new Timer(1000, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (player != null && !inCountdown) {
+                if (player != null && !((GameArea)area).waitingToStart && !gamePaused) {
                     score++;
                 }
 
@@ -924,7 +927,7 @@ public class Dodger {
         powerupAdder = new Timer(5000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (player != null && !inCountdown) {
+                if (player != null  && !((GameArea)area).waitingToStart && !gamePaused) {
                     int type = ThreadLocalRandom.current().nextInt(1, Powerup.numberOfpowerUpTypes + 1);
                     //Position
                     int x = ThreadLocalRandom.current().nextInt(0, (int) (Dodger.size.getWidth() - Powerup.SIZE.getWidth()));
