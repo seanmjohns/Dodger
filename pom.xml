@@ -4,7 +4,7 @@
 
     <groupId>com.pigcoder.dodger</groupId>
     <artifactId>dodger</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1</version>
 
     <properties>
         <maven.compiler.source>1.7</maven.compiler.source>

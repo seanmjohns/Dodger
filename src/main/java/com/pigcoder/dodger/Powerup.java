@@ -7,7 +7,7 @@ public class Powerup extends Rectangle2D.Double {
 
 	public static final Dimension SIZE = new Dimension(20,20);
 
-	public static final int numberOfpowerUpTypes = 2;
+	public static final int numberOfpowerUpTypes = 3;
 
 	//Types:
 	// 1: Brake
