@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="target">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/target/._dodger-0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/target/dodger-0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

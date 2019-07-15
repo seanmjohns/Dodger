@@ -87,6 +87,7 @@ public class Dodger {
 
         repainter.start();
 
+
         screen = new JFrame();
         screen.setResizable(false);
 
